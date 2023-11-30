@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <regex.h>
+
+// Função para extrair números de um CPF
+char* extrair_numeros_cpf(const char* cpf_com_pontuacao) {
+    regex_t regex;
+    regcomp(&regex, "\\D", REG_EXTENDED);
+
+    regmatch_t matches[1];
+    size_t match_size = 0;
+
+    char* numeros = NULL;
+
+    while (regexec(&regex, cpf_com_pontuacao + match_size, 1, matches, 0) == 0) {
+        size_t start = match_size + matches[0].rm_so;
+        size_t end = match_size + matches[0].rm_eo;
+
+        numeros = realloc(numeros, end - start + 1);
+        snprintf(numeros, end - start + 1, "%.*s", (int)(end - start), cpf_com_pontuacao + start);
+
+        match_size = end;
+    }
+
+    regfree(&regex);
+    return numeros;
+}
+
+// Função para validar um valor em BRL
+int validar_valor_brl(const char* valor) {
+    regex_t regex;
+    regcomp(&regex, "^[Rr]\\$\\s?\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d{2})?$", REG_EXTENDED);
+
+    int resultado = regexec(&regex, valor, 0, NULL, 0);
+
+    regfree(&regex);
+    return resultado == 0;
+}
+
+// Função para validar um número de telefone
+int validar_numero_telefone(const char* telefone) {
+    regex_t regex;
+    regcomp(&regex, "^\\(?(\\d{2})\\)?\\s?(\\d{4,5})[-\\s]?(\\d{4})$", REG_EXTENDED);
+
+    int resultado = regexec(&regex, telefone, 0, NULL, 0);
+
+    regfree(&regex);
+    return resultado == 0;
+}
+
+int main() {
+    const char* cpf = "123.456.789-10";
+    char* cpf_numeros = extrair_numeros_cpf(cpf);
+    printf("CPF: %s\n", cpf_numeros);
+    free(cpf_numeros);
+
+    const char* valor1 = "R$ 1000,10";
+    const char* valor2 = "r$123.456,78";
+    const char* valor3 = "R$0,99";
+    printf("Validação do valor BRL: %d %d %d\n", validar_valor_brl(valor1), validar_valor_brl(valor2), validar_valor_brl(valor3));
+
+    const char* telefone1 = "(43)35428000";
+    const char* telefone2 = "(43) 3542 8000";
+    const char* telefone3 = "(43) 3542-8000";
+    const char* telefone4 = "(43) 99999-000";
+    printf("Validação do número de telefone: %d %d %d %d\n", validar_numero_telefone(telefone1), validar_numero_telefone(telefone2),
+           validar_numero_telefone(telefone3), validar_numero_telefone(telefone4));
+
+    return 0;
+}
